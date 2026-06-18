@@ -1,0 +1,67 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: agribridge
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: agribridge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build NestJS app
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm run test
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: agribridge
+          DB_PASSWORD: test_password
+          DB_NAME: agribridge_test
+          JWT_SECRET: ci_test_secret
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_SECRET: ci_refresh_secret
+          JWT_REFRESH_EXPIRES_IN: 7d
+          OTP_EXPIRES_IN_MINUTES: 10
+          MAIL_HOST: smtp.gmail.com
+          MAIL_PORT: 587
+          MAIL_USER: test@test.com
+          MAIL_PASSWORD: test
+          MAIL_FROM: noreply@agribridge.com
+          FRONTEND_URL: http://localhost:3001
