@@ -11,3 +11,9 @@ export const createUser = async (userData) => {
   const user = userRepo().create(userData);
   return await userRepo().save(user);
 };
+
+export const updateUser = async (id, updates) => {
+  const repo = userRepo();
+  await repo.update(id, updates);
+  return await repo.findOne({ where: { id } });
+};
