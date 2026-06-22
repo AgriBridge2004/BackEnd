@@ -1,4 +1,5 @@
-import { registerUser, verifyOtp, resendOtp } from './auth.service.js';
+
+import { registerUser, verifyOtp, resendOtp, loginUser } from './auth.service.js';
 
 export const register = async (req, res) => {
   try {
@@ -89,5 +90,35 @@ export const resendOtpController = async (req, res) => {
     }
 
     return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const { user, accessToken, refreshToken } = await loginUser(email, password);
+
+    return res.status(200).json({
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+
+  } catch (error) {
+    console.error('LOGIN ERROR:', error);
+    if (error.message === 'Email not verified') {
+      return res.status(403).json({ message: error.message });
+    }
+    return res.status(401).json({ message: 'Invalid credentials' });
   }
 };

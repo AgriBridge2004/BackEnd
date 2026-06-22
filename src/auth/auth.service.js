@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { createUser, findUserByEmail, updateUser } from '../users/users.service.js';
 import { sendOtpEmail } from '../config/mailer.js';
+import jwt from 'jsonwebtoken';
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -28,7 +29,6 @@ export const registerUser = async ({ email, password, role }) => {
     otpExpiresAt,
   });
 
-  // ابعت الإيميل فيه الـ OTP الأصلي (plain)، مش المشفر
   await sendOtpEmail(email, otp);
 
   return { user, otp };
@@ -88,4 +88,35 @@ export const resendOtp = async (email) => {
   await sendOtpEmail(email, otp);
 
   return { message: 'OTP resent successfully' };
+};
+
+export const loginUser = async (email, password) => {
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new Error('Invalid credentials');
+  }
+
+  if (!user.isVerified) {
+    throw new Error('Email not verified');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    throw new Error('Invalid credentials');
+  }
+
+  const accessToken = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+
+  const refreshToken = jwt.sign(
+    { id: user.id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+  );
+      await updateUser(user.id, { refreshToken });
+  return { user, accessToken, refreshToken };
 };

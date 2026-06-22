@@ -32,6 +32,10 @@ export const UserEntity = new EntitySchema({
       type: 'timestamp',
       nullable: true,
     },
+    refreshToken: {
+      type: 'varchar',
+      nullable: true,
+    },
     createdAt: {
       type: 'timestamp',
       createDate: true,
