@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
-import { createUser, findUserByEmail, updateUser } from '../users/users.service.js';
-import { sendOtpEmail } from '../config/mailer.js';
+import { createUser, findUserByEmail, updateUser, findUserByResetToken } from '../users/users.service.js';
+import { sendOtpEmail, sendResetEmail } from '../config/mailer.js';
 import jwt from 'jsonwebtoken';
-
+import crypto from 'crypto';
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -119,4 +119,52 @@ export const loginUser = async (email, password) => {
   );
       await updateUser(user.id, { refreshToken });
   return { user, accessToken, refreshToken };
+};
+
+export const forgotPassword = async (email) => {
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // ولّد token عشوائي آمن
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  // وقت انتهاء ساعة من هلقيت
+  const resetPasswordExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  // احفظ الـ token بالـ DB
+  await updateUser(user.id, {
+    resetPasswordToken: resetToken,
+    resetPasswordExpiresAt,
+  });
+
+  // ابعت الإيميل فيه الرابط
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+  await sendResetEmail(email, resetUrl);
+
+  return { message: 'Password reset email sent' };
+};
+
+export const resetPassword = async (token, newPassword) => {
+  const user = await findUserByResetToken(token);
+
+  if (!user) {
+    throw new Error('Invalid or expired token');
+  }
+
+  if (new Date() > new Date(user.resetPasswordExpiresAt)) {
+    throw new Error('Invalid or expired token');
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await updateUser(user.id, {
+    password: hashedPassword,
+    resetPasswordToken: null,
+    resetPasswordExpiresAt: null,
+  });
+
+  return { message: 'Password reset successfully' };
 };

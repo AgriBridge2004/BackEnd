@@ -36,6 +36,14 @@ export const UserEntity = new EntitySchema({
       type: 'varchar',
       nullable: true,
     },
+    resetPasswordToken: {
+      type: 'varchar',
+      nullable: true,
+    },
+    resetPasswordExpiresAt: {
+      type: 'timestamp',
+      nullable: true,
+    },
     createdAt: {
       type: 'timestamp',
       createDate: true,

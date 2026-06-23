@@ -1,5 +1,5 @@
 
-import { registerUser, verifyOtp, resendOtp, loginUser } from './auth.service.js';
+import { registerUser, verifyOtp, resendOtp, loginUser, forgotPassword, resetPassword } from './auth.service.js';
 
 export const register = async (req, res) => {
   try {
@@ -120,5 +120,55 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: error.message });
     }
     return res.status(401).json({ message: 'Invalid credentials' });
+  }
+};
+
+export const forgotPasswordController = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    await forgotPassword(email);
+
+    return res.status(200).json({
+      message: 'Password reset email sent. Please check your inbox.',
+    });
+
+  } catch (error) {
+    console.error('FORGOT PASSWORD ERROR:', error);
+    // ما بنكشف إذا الإيميل موجود أو لأ — أمان أكتر
+    return res.status(200).json({
+      message: 'Password reset email sent. Please check your inbox.',
+    });
+  }
+};
+
+export const resetPasswordController = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    await resetPassword(token, newPassword);
+
+    return res.status(200).json({
+      message: 'Password reset successfully. You can now login with your new password.',
+    });
+
+  } catch (error) {
+    console.error('RESET PASSWORD ERROR:', error);
+    if (error.message === 'Invalid or expired token') {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
