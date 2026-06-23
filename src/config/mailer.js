@@ -26,3 +26,24 @@ export const sendOtpEmail = async (toEmail, otp) => {
     `,
   });
 };
+
+export const sendResetEmail = async (toEmail, resetUrl) => {
+  await transporter.sendMail({
+    from: `"AgriBridge" <${process.env.MAIL_USER}>`,
+    to: toEmail,
+    subject: 'AgriBridge - Reset Your Password',
+    html: `
+      <h2>Password Reset Request 🔐</h2>
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetUrl}" style="
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+      ">Reset Password</a>
+      <p>This link expires in <strong>1 hour</strong>.</p>
+      <p>If you didn't request this, ignore this email.</p>
+    `,
+  });
+};

@@ -17,3 +17,7 @@ export const updateUser = async (id, updates) => {
   await repo.update(id, updates);
   return await repo.findOne({ where: { id } });
 };
+
+export const findUserByResetToken = async (token) => {
+  return await userRepo().findOne({ where: { resetPasswordToken: token } });
+};
