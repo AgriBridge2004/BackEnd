@@ -21,3 +21,7 @@ export const updateUser = async (id, updates) => {
 export const findUserByResetToken = async (token) => {
   return await userRepo().findOne({ where: { resetPasswordToken: token } });
 };
+
+export const completeOnboarding = async (userId) => {
+  return await updateUser(userId, { hasCompletedOnboarding: true });
+};
