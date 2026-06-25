@@ -10,33 +10,26 @@ export const authorizeOwner = async (req, res, next) => {
     console.log('User ID from Token:', tokenUserId);
 
     const farmerRepo = AppDataSource.getRepository(FarmerEntity);
-    const farmer = await farmerRepo.findOne({ where: { id: farmerId } });
+const farmer = await farmerRepo.findOne({ where: { id: farmerId } });
 
-    console.log('Farmer found:', farmer);
-    console.log('Farmer userId:', farmer?.userId);
+if (!farmer) {
+  return res.status(404).json({ message: 'Farmer not found' });
+}
 
-    if (!farmer) {
-      return res.status(404).json({ message: 'Farmer not found' });
-    }
-
-    if (farmer.userId !== tokenUserId) {
-      return res.status(403).json({ 
-        message: 'Access denied. You can only edit your own profile.' 
-      });
-    }
-    // بعد ما تتأكد الفلاح موجود
-// ✅ الـ admin يعدي مباشرة
+// ✅ أول شي تحقق من الـ admin
 if (req.user.role === 'admin') {
   return next();
 }
 
+// ✅ بعدين تحقق من الـ ownership
 if (farmer.userId !== tokenUserId) {
   return res.status(403).json({ 
     message: 'Access denied. You can only edit your own profile.' 
   });
 }
 
-    next();
+next();
+
   } catch (error) {
     console.log('ERROR:', error);
     return res.status(500).json({ message: 'Server error' });

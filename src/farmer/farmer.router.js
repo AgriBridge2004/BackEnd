@@ -162,7 +162,7 @@ router.put(
 router.delete(
   '/:id',
   verifyToken,
-  verifyRole('farmer'),
+  verifyRole('farmer', 'admin'),
   authorizeOwner,
   deleteFarmerController
 );

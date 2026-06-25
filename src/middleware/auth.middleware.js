@@ -31,11 +31,9 @@ export const verifyRole = (...allowedRoles) => {
     if (!req.user) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
-   // ✅ أضف هاد السطر — admin يعدي دايماً
-    if (req.user.role === 'admin') {
-      return next();
-    }
+
+   
+  
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Access denied' });
     }
