@@ -24,6 +24,10 @@ export const UserEntity = new EntitySchema({
       type: 'boolean',
       default: false,
     },
+    hasCompletedOnboarding: {
+  type: 'boolean',
+  default: false,
+},
     otp: {
       type: 'varchar',
       nullable: true,
