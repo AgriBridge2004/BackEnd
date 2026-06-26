@@ -24,7 +24,8 @@ const options = {
       },
     },
   },
-  apis: ['./src/auth/auth.router.js'],
+  apis: ['./src/auth/auth.router.js',
+  './src/farmer/farmer.router.js',],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
