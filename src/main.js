@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { AppDataSource } from './config/database.js';
 import authRouter from './auth/auth.router.js';
 import farmerRouter from './farmer/farmer.router.js';
+import listingsRouter from './listings/listing.router.js';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 dotenv.config();
@@ -17,6 +18,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/auth', authRouter);
 app.use('/farmer', farmerRouter);
+app.use('/listings', listingsRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'AgriBridge API is running 🚀' });

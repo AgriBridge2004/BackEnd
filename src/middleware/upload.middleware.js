@@ -9,12 +9,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // multer بيحفظ في الذاكرة مؤقتاً بدل السيرفر
 const storage = multer.memoryStorage();
 
 export const uploadFarmerImages = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedTypes.includes(file.mimetype)) {
@@ -31,7 +33,7 @@ export const uploadToCloudinary = (buffer, folder = 'farmers') => {
       { folder },
       (error, result) => {
         if (error) reject(error);
-        else resolve(result.secure_url); // يرجع الـ URL
+        else resolve(result.secure_url);
       }
     );
     Readable.from(buffer).pipe(stream);
@@ -47,7 +49,7 @@ export const processUploadedImages = async (files = {}) => {
     if (file?.buffer) {
       try {
         const url = await uploadToCloudinary(file.buffer, 'agribridge/farmers');
-        result[fieldName] = url; // URL من Cloudinary
+        result[fieldName] = url;
       } catch (error) {
         throw new Error(`Failed to upload ${fieldName}: ${error.message}`);
       }
