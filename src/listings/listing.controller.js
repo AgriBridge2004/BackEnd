@@ -4,6 +4,7 @@ import {
   getListingsByFarmer,
   updateListing,
   deleteListing,
+  getAllListings,
 } from './listing.service.js';
 import { getFarmerByUserId } from '../farmer/farmer.service.js';
 import { uploadToCloudinary } from '../middleware/upload.middleware.js';
@@ -35,6 +36,17 @@ export const createListingController = async (req, res) => {
 
   } catch (error) {
     console.error('CREATE LISTING ERROR:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// GET /listings
+export const getAllListingsController = async (req, res) => {
+  try {
+    const listings = await getAllListings();
+    return res.status(200).json({ listings });
+  } catch (error) {
+    console.error('GET ALL LISTINGS ERROR:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

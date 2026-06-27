@@ -6,11 +6,24 @@ import {
   updateListingController,
   deleteListingController,
   uploadListingImagesController,
+  getAllListingsController,
 } from './listing.controller.js';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 import { uploadFarmerImages } from '../middleware/upload.middleware.js';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /listings:
+ *   get:
+ *     summary: Get all available listings (public)
+ *     tags: [Listings]
+ *     responses:
+ *       200:
+ *         description: List of all available listings
+ */
+router.get('/', getAllListingsController);
 
 /**
  * @swagger

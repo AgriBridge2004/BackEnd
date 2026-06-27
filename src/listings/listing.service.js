@@ -31,3 +31,9 @@ export const deleteListing = async (id, farmerId) => {
   if (listing.farmerId !== farmerId) throw new Error('Unauthorized');
   return await listingRepo().remove(listing);
 };
+
+export const getAllListings = async () => {
+  return await listingRepo().find({
+    where: { status: 'Available' },
+  });
+};
