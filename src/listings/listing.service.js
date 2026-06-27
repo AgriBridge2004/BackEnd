@@ -32,8 +32,39 @@ export const deleteListing = async (id, farmerId) => {
   return await listingRepo().remove(listing);
 };
 
-export const getAllListings = async () => {
-  return await listingRepo().find({
-    where: { status: 'Available' },
-  });
+export const getAllListings = async (filters = {}) => {
+  const repo = listingRepo();
+  const query = repo.createQueryBuilder('listing');
+
+  query.where('listing.status = :status', { status: 'Available' });
+
+  if (filters.category) {
+    query.andWhere('listing.category = :category', { category: filters.category });
+  }
+
+  if (filters.productType) {
+    query.andWhere('listing.productType = :productType', { productType: filters.productType });
+  }
+
+  if (filters.location) {
+    query.andWhere('listing.location ILIKE :location', { location: `%${filters.location}%` });
+  }
+
+  if (filters.price_min) {
+    query.andWhere('listing.price >= :price_min', { price_min: parseFloat(filters.price_min) });
+  }
+
+  if (filters.price_max) {
+    query.andWhere('listing.price <= :price_max', { price_max: parseFloat(filters.price_max) });
+  }
+
+  if (filters.qty_min) {
+    query.andWhere('listing.qty >= :qty_min', { qty_min: parseFloat(filters.qty_min) });
+  }
+
+  if (filters.qty_max) {
+    query.andWhere('listing.qty <= :qty_max', { qty_max: parseFloat(filters.qty_max) });
+  }
+
+  return await query.getMany();
 };
