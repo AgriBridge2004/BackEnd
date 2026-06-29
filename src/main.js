@@ -7,6 +7,7 @@ import farmerRouter from './farmer/farmer.router.js';
 import listingsRouter from './listings/listing.router.js';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
+import { startCronJobs } from './config/cron.js';
 dotenv.config();
 
 const app = express();
@@ -33,6 +34,7 @@ app.listen(PORT, () => {
 AppDataSource.initialize()
   .then(() => {
     console.log('✅ Database connected');
+    startCronJobs();
   })
   .catch((error) => {
     console.error('❌ Database connection failed:', error);
