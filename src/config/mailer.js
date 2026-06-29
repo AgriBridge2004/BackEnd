@@ -47,3 +47,17 @@ export const sendResetEmail = async (toEmail, resetUrl) => {
     `,
   });
 };
+
+export const sendListingExpiredEmail = async (toEmail, listingName) => {
+  await transporter.sendMail({
+    from: `"AgriBridge" <${process.env.MAIL_USER}>`,
+    to: toEmail,
+    subject: 'AgriBridge - Your Listing Has Expired',
+    html: `
+      <h2>Listing Expired 🌾</h2>
+      <p>Your listing <strong>${listingName}</strong> has expired and is no longer visible in the Marketplace.</p>
+      <p>You can create a new listing or reactivate it from your dashboard.</p>
+      <p>Thank you for using AgriBridge!</p>
+    `,
+  });
+};
