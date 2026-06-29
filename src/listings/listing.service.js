@@ -9,7 +9,26 @@ export const createListing = async (listingData) => {
 };
 
 export const getListingById = async (id) => {
-  return await listingRepo().findOne({ where: { id } });
+  const repo = listingRepo();
+  return await repo
+    .createQueryBuilder('listing')
+    .leftJoinAndMapOne(
+      'listing.farmer',
+      'Farmer',
+      'farmer',
+      'farmer.id = listing.farmerId'
+    )
+    .select([
+      'listing',
+      'farmer.id',
+      'farmer.fullName',
+      'farmer.farmName',
+      'farmer.region',
+      'farmer.profileImage',
+      'farmer.bio',
+    ])
+    .where('listing.id = :id', { id })
+    .getOne();
 };
 
 export const getListingsByFarmer = async (farmerId) => {
