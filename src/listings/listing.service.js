@@ -66,5 +66,12 @@ export const getAllListings = async (filters = {}) => {
     query.andWhere('listing.qty <= :qty_max', { qty_max: parseFloat(filters.qty_max) });
   }
 
+ if (filters.search) {
+  query.andWhere(
+    'listing.search_vector @@ plainto_tsquery(:search)',
+    { search: filters.search }
+  );
+}
+
   return await query.getMany();
 };

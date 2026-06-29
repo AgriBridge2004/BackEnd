@@ -41,9 +41,12 @@ export const createListingController = async (req, res) => {
 };
 
 // GET /listings
+// GET /listings
 export const getAllListingsController = async (req, res) => {
   try {
-    const { category, productType, location, price_min, price_max, qty_min, qty_max } = req.query;
+    const start = Date.now();
+
+    const { category, productType, location, price_min, price_max, qty_min, qty_max, search } = req.query;
 
     const filters = {
       category,
@@ -53,9 +56,14 @@ export const getAllListingsController = async (req, res) => {
       price_max,
       qty_min,
       qty_max,
+      search,
     };
 
     const listings = await getAllListings(filters);
+    
+    const responseTime = Date.now() - start;
+    console.log(`Search response time: ${responseTime}ms`);
+
     return res.status(200).json({ listings });
   } catch (error) {
     console.error('GET ALL LISTINGS ERROR:', error);

@@ -49,6 +49,11 @@ export const ListingEntity = new EntitySchema({
       type: 'simple-array',
       nullable: true,
     },
+    search_vector: {
+      type: 'tsvector',
+      nullable: true,
+      select: false,
+    },
     farmerId: {
       type: 'uuid',
       nullable: true,
@@ -70,4 +75,14 @@ export const ListingEntity = new EntitySchema({
       onDelete: 'CASCADE',
     },
   },
+  indices: [
+    {
+      name: 'IDX_LISTING_NAME',
+      columns: ['name'],
+    },
+    {
+      name: 'IDX_LISTING_DESCRIPTION',
+      columns: ['description'],
+    },
+  ],
 });
