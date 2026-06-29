@@ -4,9 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: Number(process.env.MAIL_PORT),
-  family: 4,
+  host: '74.125.133.109', // IP مباشر لـ Gmail SMTP IPv4
+  port: 587,
   secure: false,
   auth: {
     user: process.env.MAIL_USER,
