@@ -3,6 +3,7 @@ import { createUser, findUserByEmail, updateUser, findUserByResetToken } from '.
 import { sendOtpEmail, sendResetEmail } from '../config/mailer.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -29,7 +30,8 @@ export const registerUser = async ({ email, password, role }) => {
     otpExpiresAt,
   });
 
-  await sendOtpEmail(email, otp);
+  // ما بننتظر الإيميل — بيترسل بالخلفية بدون ما يوقف الـ response
+  sendOtpEmail(email, otp).catch(err => console.error('Failed to send OTP email:', err));
 
   return { user, otp };
 };
@@ -85,7 +87,7 @@ export const resendOtp = async (email) => {
     otpExpiresAt,
   });
 
-  await sendOtpEmail(email, otp);
+  sendOtpEmail(email, otp).catch(err => console.error('Failed to resend OTP email:', err));
 
   return { message: 'OTP resent successfully' };
 };
@@ -117,7 +119,7 @@ export const loginUser = async (email, password) => {
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
   );
-      await updateUser(user.id, { refreshToken });
+  await updateUser(user.id, { refreshToken });
   return { user, accessToken, refreshToken };
 };
 
@@ -128,21 +130,16 @@ export const forgotPassword = async (email) => {
     throw new Error('User not found');
   }
 
-  // ولّد token عشوائي آمن
   const resetToken = crypto.randomBytes(32).toString('hex');
-
-  // وقت انتهاء ساعة من هلقيت
   const resetPasswordExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-  // احفظ الـ token بالـ DB
   await updateUser(user.id, {
     resetPasswordToken: resetToken,
     resetPasswordExpiresAt,
   });
 
-  // ابعت الإيميل فيه الرابط
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-  await sendResetEmail(email, resetUrl);
+  sendResetEmail(email, resetUrl).catch(err => console.error('Failed to send reset email:', err));
 
   return { message: 'Password reset email sent' };
 };
