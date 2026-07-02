@@ -7,6 +7,11 @@ export const findUserByEmail = async (email) => {
   return await userRepo().findOne({ where: { email } });
 };
 
+// ✅ الدالة الجديدة: البحث عن مستخدم بواسطة ID
+export const findUserById = async (id) => {
+  return await userRepo().findOne({ where: { id } });
+};
+
 export const createUser = async (userData) => {
   const user = userRepo().create(userData);
   return await userRepo().save(user);

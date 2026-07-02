@@ -1,14 +1,28 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { 
   register, 
   login, 
   verifyOtpController as verifyOtp, 
   resendOtpController as resendOtp, 
   forgotPasswordController as forgotPassword, 
-  resetPasswordController as resetPassword 
+  resetPasswordController as resetPassword,
+  refreshTokenController,
+  logout
 } from './auth.controller.js';
+import { verifyToken } from '../middleware/auth.middleware.js';
 
 const router = Router();
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    message: 'Too many login attempts, please try again after 15 minutes',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * @swagger
@@ -111,7 +125,7 @@ router.post('/resend-otp', resendOtp);
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', login);
+router.post('/login', loginLimiter, login);
 
 /**
  * @swagger
@@ -160,5 +174,45 @@ router.post('/forgot-password', forgotPassword);
  *         description: Invalid or expired token
  */
 router.post('/reset-password', resetPassword);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh Access Token using Refresh Token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refreshToken]
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: New access token generated successfully
+ *       401:
+ *         description: Invalid or expired refresh token
+ */
+router.post('/refresh', refreshTokenController);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout user and invalidate refresh token
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/logout', verifyToken, logout);
 
 export default router;

@@ -1,5 +1,13 @@
-
-import { registerUser, verifyOtp, resendOtp, loginUser, forgotPassword, resetPassword } from './auth.service.js';
+import { 
+  registerUser, 
+  verifyOtp, 
+  resendOtp, 
+  loginUser, 
+  forgotPassword, 
+  resetPassword,
+  refreshAccessToken,
+  logoutUser
+} from './auth.service.js';
 
 export const register = async (req, res) => {
   try {
@@ -139,7 +147,6 @@ export const forgotPasswordController = async (req, res) => {
 
   } catch (error) {
     console.error('FORGOT PASSWORD ERROR:', error);
-    // ما بنكشف إذا الإيميل موجود أو لأ — أمان أكتر
     return res.status(200).json({
       message: 'Password reset email sent. Please check your inbox.',
     });
@@ -169,6 +176,51 @@ export const resetPasswordController = async (req, res) => {
     if (error.message === 'Invalid or expired token') {
       return res.status(400).json({ message: error.message });
     }
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const refreshTokenController = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    const result = await refreshAccessToken(refreshToken);
+
+    return res.status(200).json({
+      message: 'Access token refreshed successfully',
+      accessToken: result.accessToken,
+    });
+
+  } catch (error) {
+    console.error('REFRESH TOKEN ERROR:', error);
+
+    if (error.message === 'Refresh token is required') {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === 'Invalid or expired refresh token' || 
+        error.message === 'Refresh token mismatch. Please login again.') {
+      return res.status(401).json({ message: error.message });
+    }
+    
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await logoutUser(userId);
+
+    return res.status(200).json({
+      message: 'Logged out successfully',
+    });
+
+  } catch (error) {
+    console.error('LOGOUT ERROR:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

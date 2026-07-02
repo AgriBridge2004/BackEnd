@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { createUser, findUserByEmail, updateUser, findUserByResetToken } from '../users/users.service.js';
+import { createUser, findUserByEmail, updateUser, findUserByResetToken, findUserById } from '../users/users.service.js';
 import { sendOtpEmail, sendResetEmail } from '../config/mailer.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -30,7 +30,6 @@ export const registerUser = async ({ email, password, role }) => {
     otpExpiresAt,
   });
 
-  // ما بننتظر الإيميل — بيترسل بالخلفية بدون ما يوقف الـ response
   sendOtpEmail(email, otp).catch(err => console.error('Failed to send OTP email:', err));
 
   return { user, otp };
@@ -119,6 +118,7 @@ export const loginUser = async (email, password) => {
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
   );
+
   await updateUser(user.id, { refreshToken });
   return { user, accessToken, refreshToken };
 };
@@ -164,4 +164,41 @@ export const resetPassword = async (token, newPassword) => {
   });
 
   return { message: 'Password reset successfully' };
+};
+
+export const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new Error('Refresh token is required');
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await findUserById(decoded.id);
+
+    if (!user) {
+      throw new Error('Invalid refresh token');
+    }
+
+    if (user.refreshToken !== refreshToken) {
+      throw new Error('Refresh token mismatch. Please login again.');
+    }
+
+    const newAccessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    return { accessToken: newAccessToken };
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      throw new Error('Invalid or expired refresh token');
+    }
+    throw new Error(error.message || 'Failed to refresh token');
+  }
+};
+
+export const logoutUser = async (userId) => {
+  await updateUser(userId, { refreshToken: null });
+  return { message: 'Logged out successfully' };
 };
