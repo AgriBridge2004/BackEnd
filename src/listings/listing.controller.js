@@ -5,6 +5,7 @@ import {
   updateListing,
   deleteListing,
   getAllListings,
+  deleteListingImage,
 } from './listing.service.js';
 import { getFarmerByUserId } from '../farmer/farmer.service.js';
 import { uploadToCloudinary } from '../middleware/upload.middleware.js';
@@ -41,11 +42,8 @@ export const createListingController = async (req, res) => {
 };
 
 // GET /listings
-// GET /listings
 export const getAllListingsController = async (req, res) => {
   try {
-    const start = Date.now();
-
     const { category, productType, location, price_min, price_max, qty_min, qty_max, search } = req.query;
 
     const filters = {
@@ -60,11 +58,8 @@ export const getAllListingsController = async (req, res) => {
     };
 
     const listings = await getAllListings(filters);
-    
-    const responseTime = Date.now() - start;
-    console.log(`Search response time: ${responseTime}ms`);
-
     return res.status(200).json({ listings });
+
   } catch (error) {
     console.error('GET ALL LISTINGS ERROR:', error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -192,6 +187,41 @@ export const uploadListingImagesController = async (req, res) => {
 
   } catch (error) {
     console.error('UPLOAD IMAGES ERROR:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// DELETE /listings/:id/images
+export const deleteListingImageController = async (req, res) => {
+  try {
+    const farmer = await getFarmerByUserId(req.user.id);
+    if (!farmer) {
+      return res.status(404).json({ message: 'Farmer profile not found' });
+    }
+
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'imageUrl is required' });
+    }
+
+    const updated = await deleteListingImage(req.params.id, imageUrl, farmer.id);
+
+    return res.status(200).json({
+      message: 'Image deleted successfully',
+      images: updated.images,
+    });
+
+  } catch (error) {
+    console.error('DELETE IMAGE ERROR:', error);
+    if (error.message === 'Listing not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    if (error.message === 'Unauthorized') {
+      return res.status(403).json({ message: 'You can only delete images from your own listings' });
+    }
+    if (error.message === 'Image not found in this listing') {
+      return res.status(404).json({ message: error.message });
+    }
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

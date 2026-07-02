@@ -7,6 +7,7 @@ import {
   deleteListingController,
   uploadListingImagesController,
   getAllListingsController,
+  deleteListingImageController,
 } from './listing.controller.js';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 import { uploadFarmerImages } from '../middleware/upload.middleware.js';
@@ -132,6 +133,46 @@ router.patch(
     });
   },
   uploadListingImagesController
+);
+
+/**
+ * @swagger
+ * /listings/{id}/images:
+ *   delete:
+ *     summary: Delete a specific image from a listing
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [imageUrl]
+ *             properties:
+ *               imageUrl:
+ *                 type: string
+ *                 description: URL of the image to delete
+ *     responses:
+ *       200:
+ *         description: Image deleted successfully
+ *       404:
+ *         description: Image or listing not found
+ *       403:
+ *         description: Access denied
+ */
+router.delete(
+  '/:id/images',
+  verifyToken,
+  verifyRole('farmer'),
+  deleteListingImageController
 );
 
 /**
