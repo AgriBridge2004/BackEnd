@@ -8,9 +8,19 @@ import {
   forgotPasswordController as forgotPassword, 
   resetPasswordController as resetPassword,
   refreshTokenController,
-  logout
+  logout,
+  deleteAccountController
 } from './auth.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import {
+  registerSchema,
+  loginSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from './auth.schema.js';
 
 const router = Router();
 
@@ -51,7 +61,7 @@ const loginLimiter = rateLimit({
  *       409:
  *         description: Email already exists
  */
-router.post('/register', register);
+router.post('/register', validate(registerSchema), register);
 
 /**
  * @swagger
@@ -77,7 +87,7 @@ router.post('/register', register);
  *       400:
  *         description: Invalid or expired OTP
  */
-router.post('/verify-otp', verifyOtp);
+router.post('/verify-otp', validate(verifyOtpSchema), verifyOtp);
 
 /**
  * @swagger
@@ -99,7 +109,7 @@ router.post('/verify-otp', verifyOtp);
  *       200:
  *         description: OTP resent successfully
  */
-router.post('/resend-otp', resendOtp);
+router.post('/resend-otp', validate(resendOtpSchema), resendOtp);
 
 /**
  * @swagger
@@ -125,7 +135,7 @@ router.post('/resend-otp', resendOtp);
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', loginLimiter, login);
+router.post('/login', loginLimiter, validate(loginSchema), login);
 
 /**
  * @swagger
@@ -147,7 +157,7 @@ router.post('/login', loginLimiter, login);
  *       200:
  *         description: Reset email sent
  */
-router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
 
 /**
  * @swagger
@@ -173,7 +183,7 @@ router.post('/forgot-password', forgotPassword);
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password', resetPassword);
+router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
 
 /**
  * @swagger
@@ -214,5 +224,21 @@ router.post('/refresh', refreshTokenController);
  *         description: Unauthorized
  */
 router.post('/logout', verifyToken, logout);
+
+/**
+ * @swagger
+ * /auth/account:
+ *   delete:
+ *     summary: Delete user account permanently
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete('/account', verifyToken, deleteAccountController);
 
 export default router;
