@@ -28,7 +28,8 @@ const options = {
     './src/auth/auth.router.js',
     './src/farmer/farmer.router.js',
     './src/listings/listing.router.js',
-    './src/buyer/buyer.router.js'
+    './src/buyer/buyer.router.js',
+    './src/rfq/rfq.router.js'
   ],
 };
 

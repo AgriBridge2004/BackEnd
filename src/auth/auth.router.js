@@ -8,7 +8,8 @@ import {
   forgotPasswordController as forgotPassword, 
   resetPasswordController as resetPassword,
   refreshTokenController,
-  logout
+  logout,
+  deleteAccountController
 } from './auth.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 
@@ -214,5 +215,21 @@ router.post('/refresh', refreshTokenController);
  *         description: Unauthorized
  */
 router.post('/logout', verifyToken, logout);
+
+/**
+ * @swagger
+ * /auth/account:
+ *   delete:
+ *     summary: Delete user account permanently
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete('/account', verifyToken, deleteAccountController);
 
 export default router;

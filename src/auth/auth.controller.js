@@ -6,7 +6,8 @@ import {
   forgotPassword, 
   resetPassword,
   refreshAccessToken,
-  logoutUser
+  logoutUser,
+  deleteAccount  
 } from './auth.service.js';
 
 export const register = async (req, res) => {
@@ -222,6 +223,23 @@ export const logout = async (req, res) => {
 
   } catch (error) {
     console.error('LOGOUT ERROR:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// DELETE ACCOUNT
+
+export const deleteAccountController = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await deleteAccount(userId);
+
+    return res.status(200).json({
+      message: 'Account deleted successfully',
+    });
+
+  } catch (error) {
+    console.error('DELETE ACCOUNT ERROR:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
