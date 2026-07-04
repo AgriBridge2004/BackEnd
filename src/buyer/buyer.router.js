@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 import { uploadFarmerImages } from '../middleware/upload.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import { createBuyerSchema, updateBuyerSchema } from './buyer.schema.js';
 import {
   createBuyerController,
   getBuyerController,
@@ -59,6 +61,7 @@ router.post(
   uploadFarmerImages.fields([
     { name: 'profileImage', maxCount: 1 },
   ]),
+  validate(createBuyerSchema),
   createBuyerController
 );
 
@@ -105,6 +108,7 @@ router.put(
   uploadFarmerImages.fields([
     { name: 'profileImage', maxCount: 1 },
   ]),
+  validate(updateBuyerSchema),
   updateBuyerController
 );
 

@@ -11,6 +11,8 @@ import {
 } from './listing.controller.js';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 import { uploadFarmerImages } from '../middleware/upload.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import { createListingSchema, updateListingSchema } from './listing.schema.js';
 
 const router = Router();
 
@@ -18,8 +20,43 @@ const router = Router();
  * @swagger
  * /listings:
  *   get:
- *     summary: Get all available listings (public)
+ *     summary: Get all available listings with filter and search (public)
  *     tags: [Listings]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [Fruits, Vegetables, Nuts, Herbs, Grains, Meat, Dairy, Eggs, Honey]
+ *       - in: query
+ *         name: productType
+ *         schema:
+ *           type: string
+ *           enum: [Plant, Animal]
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: price_min
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: price_max
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: qty_min
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: qty_max
+ *         schema:
+ *           type: number
  *     responses:
  *       200:
  *         description: List of all available listings
@@ -64,22 +101,24 @@ router.get('/', getAllListingsController);
  *     responses:
  *       201:
  *         description: Listing created successfully
+ *       400:
+ *         description: Validation error
  *       403:
  *         description: Access denied
  */
-router.post('/', verifyToken, verifyRole('farmer'), createListingController);
+router.post('/', verifyToken, verifyRole('farmer'), validate(createListingSchema), createListingController);
 
 /**
  * @swagger
  * /listings/my:
  *   get:
- *     summary: Get my listings
+ *     summary: Get my listings (farmer only)
  *     tags: [Listings]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of farmer listings
+ *         description: List of farmer listings with status
  */
 router.get('/my', verifyToken, verifyRole('farmer'), getMyListingsController);
 
@@ -159,7 +198,6 @@ router.patch(
  *             properties:
  *               imageUrl:
  *                 type: string
- *                 description: URL of the image to delete
  *     responses:
  *       200:
  *         description: Image deleted successfully
@@ -179,7 +217,7 @@ router.delete(
  * @swagger
  * /listings/{id}:
  *   get:
- *     summary: Get listing by ID
+ *     summary: Get listing by ID with farmer info
  *     tags: [Listings]
  *     parameters:
  *       - in: path
@@ -189,7 +227,7 @@ router.delete(
  *           type: string
  *     responses:
  *       200:
- *         description: Listing details
+ *         description: Listing details including farmer info
  *       404:
  *         description: Listing not found
  */
@@ -212,8 +250,10 @@ router.get('/:id', getListingController);
  *     responses:
  *       200:
  *         description: Listing updated successfully
+ *       400:
+ *         description: Validation error
  */
-router.put('/:id', verifyToken, verifyRole('farmer'), updateListingController);
+router.put('/:id', verifyToken, verifyRole('farmer'), validate(updateListingSchema), updateListingController);
 
 /**
  * @swagger

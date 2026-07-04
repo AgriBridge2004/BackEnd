@@ -8,6 +8,12 @@ import {
   updateQuoteController,
 } from './rfq.controller.js';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import {
+  createRFQSchema,
+  createQuoteSchema,
+  updateQuoteSchema,
+} from './rfq.schema.js';
 
 const router = Router();
 
@@ -45,7 +51,7 @@ const router = Router();
  *       403:
  *         description: Access denied
  */
-router.post('/', verifyToken, verifyRole('buyer'), createRFQController);
+router.post('/', verifyToken, verifyRole('buyer'), validate(createRFQSchema), createRFQController);
 
 /**
  * @swagger
@@ -129,7 +135,7 @@ router.get('/:id', verifyToken, getRFQController);
  *       409:
  *         description: Already submitted a quote
  */
-router.post('/:id/quotes', verifyToken, verifyRole('farmer'), createQuoteController);
+router.post('/:id/quotes', verifyToken, verifyRole('farmer'), validate(createQuoteSchema), createQuoteController);
 
 /**
  * @swagger
@@ -169,6 +175,6 @@ router.post('/:id/quotes', verifyToken, verifyRole('farmer'), createQuoteControl
  *       400:
  *         description: Invalid action
  */
-router.patch('/:id/quotes/:qid', verifyToken, verifyRole('buyer'), updateQuoteController);
+router.patch('/:id/quotes/:qid', verifyToken, verifyRole('buyer'), validate(updateQuoteSchema), updateQuoteController);
 
 export default router;

@@ -65,3 +65,9 @@ export const updateQuoteStatus = async (id, updates) => {
   await repo.update(id, updates);
   return await repo.findOne({ where: { id } });
 };
+
+export const closeRFQ = async (id) => {
+  const repo = rfqRepo();
+  await repo.update(id, { status: 'closed' });
+  return await repo.findOne({ where: { id } });
+};

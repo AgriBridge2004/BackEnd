@@ -7,6 +7,7 @@ import {
   getQuotesByRFQ,
   getQuoteById,
   updateQuoteStatus,
+  closeRFQ,
 } from './rfq.service.js';
 import { getBuyerByUserId } from '../buyer/buyer.service.js';
 import { getFarmerByUserId } from '../farmer/farmer.service.js';
@@ -175,8 +176,8 @@ export const updateQuoteController = async (req, res) => {
     if (action === 'accept') {
       updates = { status: 'accepted' };
       emailMessage = `Your quote for RFQ has been accepted! Price: ${quote.price}`;
-      // إغلاق الـ RFQ
-      await AppDataSource.getRepository(RFQEntity).update(req.params.id, { status: 'closed' });
+      // إغلاق الـ RFQ عن طريق الـ service
+      await closeRFQ(req.params.id);
     } else if (action === 'reject') {
       updates = { status: 'rejected' };
       emailMessage = `Your quote for RFQ has been rejected.`;
