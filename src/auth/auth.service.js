@@ -3,6 +3,8 @@ import { createUser, findUserByEmail, updateUser, findUserByResetToken, findUser
 import { sendOtpEmail, sendResetEmail } from '../config/mailer.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { AppDataSource } from '../config/database.js';
+import { UserEntity } from '../users/user.entity.js';
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -201,4 +203,16 @@ export const refreshAccessToken = async (refreshToken) => {
 export const logoutUser = async (userId) => {
   await updateUser(userId, { refreshToken: null });
   return { message: 'Logged out successfully' };
+};
+
+// DELETE ACCOUNT SERVICE
+
+export const deleteAccount = async (userId) => {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  const repo = AppDataSource.getRepository(UserEntity);
+  await repo.remove(user);
+  return { message: 'Account deleted successfully' };
 };

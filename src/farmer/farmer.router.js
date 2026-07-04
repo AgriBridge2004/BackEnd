@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 import { uploadFarmerImages } from '../middleware/upload.middleware.js';
 import { authorizeOwner } from '../middleware/authorizeOwner.js';
+import { validate } from '../middleware/validate.middleware.js';
+import { createFarmerSchema, updateFarmerSchema } from './farmer.schema.js';
 import {
   createFarmerController,
   getFarmerController,
@@ -38,19 +40,14 @@ const router = Router();
  *               bio:
  *                 type: string
  *               cropTypes:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: "مثال: زيتون، قمح"
+ *                 type: string
  *               region:
  *                 type: string
  *               farmSize:
  *                 type: number
- *                 description: "المساحة بالدونم"
  *               profileImage:
  *                 type: string
  *                 format: binary
- *                 description: "JPG أو PNG فقط، max 5MB"
  *               coverImage:
  *                 type: string
  *                 format: binary
@@ -70,6 +67,7 @@ router.post(
     { name: 'profileImage', maxCount: 1 },
     { name: 'coverImage', maxCount: 1 },
   ]),
+  validate(createFarmerSchema),
   createFarmerController
 );
 
@@ -97,19 +95,14 @@ router.post(
  *               bio:
  *                 type: string
  *               cropTypes:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: "مثال: زيتون، قمح"
+ *                 type: string
  *               region:
  *                 type: string
  *               farmSize:
  *                 type: number
- *                 description: "المساحة بالدونم"
  *               profileImage:
  *                 type: string
  *                 format: binary
- *                 description: "JPG أو PNG فقط، max 5MB"
  *               coverImage:
  *                 type: string
  *                 format: binary
@@ -123,8 +116,6 @@ router.post(
  *       404:
  *         description: Farmer not found
  */
-
-//  /profile بدل /:id — والـ id بيجي من الـ token مباشرة
 router.put(
   '/profile',
   verifyToken,
@@ -133,6 +124,7 @@ router.put(
     { name: 'profileImage', maxCount: 1 },
     { name: 'coverImage', maxCount: 1 },
   ]),
+  validate(updateFarmerSchema),
   updateFarmerController
 );
 

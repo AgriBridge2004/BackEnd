@@ -8,6 +8,8 @@ import listingsRouter from './listings/listing.router.js';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 import { startCronJobs } from './config/cron.js';
+import buyerRouter from './buyer/buyer.router.js';
+import rfqRouter from './rfq/rfq.router.js';
 dotenv.config();
 
 const app = express();
@@ -20,7 +22,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/auth', authRouter);
 app.use('/farmer', farmerRouter);
 app.use('/listings', listingsRouter);
-
+app.use('/buyer', buyerRouter);
+app.use('/rfqs', rfqRouter);
 app.get('/', (req, res) => {
   res.json({ message: 'AgriBridge API is running 🚀' });
 });
