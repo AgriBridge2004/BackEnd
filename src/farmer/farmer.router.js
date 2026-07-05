@@ -7,9 +7,9 @@ import { createFarmerSchema, updateFarmerSchema } from './farmer.schema.js';
 import {
   createFarmerController,
   getFarmerController,
+  getMyFarmerController,
   getFarmerByUserController,
   updateFarmerController,
-  deleteFarmerController,
   getAllFarmersController,
 } from './farmer.controller.js';
 
@@ -116,6 +116,8 @@ router.post(
  *       404:
  *         description: Farmer not found
  */
+
+
 router.put(
   '/profile',
   verifyToken,
@@ -127,12 +129,54 @@ router.put(
   validate(updateFarmerSchema),
   updateFarmerController
 );
+/**
+ * @swagger
+ * /farmers/profile/me:
+ *   get:
+ *     summary: Get the current farmer's own profile
+ *     tags: [Farmer]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Farmer profile retrieved successfully
+ *       401:
+ *         description: User authentication required
+ *       404:
+ *         description: Farmer profile not found
+ */
+router.get(
+  "/profile/me",
+  verifyToken,
+  verifyRole("farmer"),
+  getMyFarmerController
+);
 
 /**
  * @swagger
- * /farmer/{id}:
- *   delete:
- *     summary: Delete a farmer profile
+ * /farmers:
+ *   get:
+ *     summary: Get all farmers (Admin only)
+ *     tags: [Farmer]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Farmers retrieved successfully
+ */
+router.get(
+  "/",
+  verifyToken,
+  verifyRole("admin"),
+  getAllFarmersController
+);
+
+
+/**
+ * @swagger
+ * /farmers/{id}:
+ *   get:
+ *     summary: Get a farmer profile by farmer ID
  *     tags: [Farmer]
  *     security:
  *       - bearerAuth: []
@@ -145,18 +189,17 @@ router.put(
  *           format: uuid
  *     responses:
  *       200:
- *         description: Farmer deleted successfully
+ *         description: Farmer retrieved successfully
  *       404:
  *         description: Farmer not found
- *       401:
- *         description: Unauthorized - Token required
  */
-router.delete(
-  '/:id',
+router.get(
+  "/:id",
   verifyToken,
-  verifyRole('farmer', 'admin'),
-  authorizeOwner,
-  deleteFarmerController
+  getFarmerController
 );
+
+
+
 
 export default router;

@@ -1,4 +1,4 @@
-import { createFarmer, getFarmerById, updateFarmer, deleteFarmer, getAllFarmers, getFarmerByUserId } from './farmer.service.js';
+import { createFarmer, getFarmerById, updateFarmer, getAllFarmers, getFarmerByUserId } from './farmer.service.js';
 import { processUploadedImages } from '../middleware/upload.middleware.js';
 
 // ✅ Helper: التحقق من الصورة قبل الرفع
@@ -133,24 +133,7 @@ export const updateFarmerController = async (req, res) => {
   }
 };
 
-export const deleteFarmerController = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const existingFarmer = await getFarmerById(id);
-    if (!existingFarmer) {
-      return res.status(404).json({ message: 'Farmer not found' });
-    }
-
-    await deleteFarmer(id);
-
-    return res.status(200).json({ message: 'Farmer deleted successfully' });
-
-  } catch (error) {
-    console.error('DELETE FARMER ERROR:', error);
-    return res.status(500).json({ message: error.message || 'Internal server error' });
-  }
-};
 
 export const getFarmerController = async (req, res) => {
   try {
@@ -167,6 +150,23 @@ export const getFarmerController = async (req, res) => {
 export const getFarmerByUserController = async (req, res) => {
   try {
     const farmer = await getFarmerByUserId(req.params.userId);
+    if (!farmer) {
+      return res.status(404).json({ message: 'Farmer profile not found' });
+    }
+    return res.status(200).json(farmer);
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Internal server error' });
+  }
+};
+
+export const getMyFarmerController = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'User authentication required' });
+    }
+
+    const farmer = await getFarmerByUserId(userId);
     if (!farmer) {
       return res.status(404).json({ message: 'Farmer profile not found' });
     }
