@@ -10,6 +10,8 @@ import { swaggerSpec } from './config/swagger.js';
 import { startCronJobs } from './config/cron.js';
 import buyerRouter from './buyer/buyer.router.js';
 import rfqRouter from './rfq/rfq.router.js';
+import QORouter from './QO/QO.router.js';
+
 dotenv.config();
 
 const app = express();
@@ -24,21 +26,23 @@ app.use('/farmer', farmerRouter);
 app.use('/listings', listingsRouter);
 app.use('/buyer', buyerRouter);
 app.use('/rfqs', rfqRouter);
+app.use('/qo', QORouter);
+
 app.get('/', (req, res) => {
   res.json({ message: 'AgriBridge API is running 🚀' });
 });
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
 AppDataSource.initialize()
   .then(() => {
     console.log('✅ Database connected');
     startCronJobs();
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
   })
   .catch((error) => {
     console.error('❌ Database connection failed:', error);
+    process.exit(1);
   });

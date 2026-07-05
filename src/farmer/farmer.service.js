@@ -47,17 +47,7 @@ export const updateFarmer = async (id, updates) => {
   }
 };
 
-export const deleteFarmer = async (id) => {
-  try {
-    const farmer = await farmerRepo().findOne({ where: { id } });
-    if (!farmer) {
-      throw new Error('Farmer not found');
-    }
-    return await farmerRepo().remove(farmer);
-  } catch (error) {
-    throw new Error(`Failed to delete farmer: ${error.message}`);
-  }
-};
+
 
 export const getAllFarmers = async () => {
   try {
