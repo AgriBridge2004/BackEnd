@@ -30,7 +30,7 @@ const options = {
     './src/listings/listing.router.js',
     './src/buyer/buyer.router.js',
     './src/rfq/rfq.router.js',
-    './src/QO/QO.router.js',
+    './src/deals/deal.router.js',
   ],
 };
 
