@@ -5,8 +5,10 @@ import {
   getDealController,
   signContractController,
   getContractPDFController,
+  updateDealStatusController, // ✅ إضافة الاستيراد
 } from './deal.controller.js';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
+import messageRouter from '../messages/message.router.js';
 
 const router = Router();
 
@@ -121,6 +123,70 @@ router.post('/:id/contract/sign', verifyToken, verifyRole('buyer', 'farmer'), si
  *         description: Deal not found
  */
 router.get('/:id/contract/pdf', verifyToken, verifyRole('buyer', 'farmer'), getContractPDFController);
+
+/**
+ * @swagger
+ * /deals/{id}/messages:
+ *   post:
+ *     summary: Send a message in a deal chat
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *   get:
+ *     summary: Get all messages in a deal chat
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.use('/:id/messages', messageRouter);
+
+/**
+ * @swagger
+ * /deals/{id}/status:
+ *   patch:
+ *     summary: Update deal status (buyer or farmer)
+ *     tags: [Deals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Deal ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, confirmed, active, completed, cancelled]
+ *                 description: New status for the deal
+ *     responses:
+ *       200:
+ *         description: Deal status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 deal:
+ *                   type: object
+ *       400:
+ *         description: Invalid status provided
+ *       403:
+ *         description: You are not part of this deal
+ *       404:
+ *         description: Deal not found
+ */
+router.patch('/:id/status', verifyToken, verifyRole('buyer', 'farmer'), updateDealStatusController);
 
 /**
  * @swagger
