@@ -7,12 +7,13 @@ import {
   signContract,
   generateContractPDF,
 } from './deal.service.js';
-import { getBuyerByUserId } from '../buyer/buyer.service.js';
-import { getFarmerByUserId } from '../farmer/farmer.service.js';
+import { getBuyerByUserId, getBuyerById } from '../buyer/buyer.service.js';  // ✅ أضفنا getBuyerById
+import { getFarmerByUserId, getFarmerById } from '../farmer/farmer.service.js'; // ✅ أضفنا getFarmerById
 import { getRFQById } from '../rfq/rfq.service.js';
 import { getListingById } from '../listings/listing.service.js';
+import { createNotification } from '../notifications/notification.service.js';
 
-// POST /deals — إنشاء Deal جديد
+// ─── POST /deals — إنشاء Deal جديد ──────────────────────────
 export const createDealController = async (req, res) => {
   try {
     const { source, rfqId, listingId, price, quantity, deliveryDate, notes } = req.body;
@@ -71,6 +72,27 @@ export const createDealController = async (req, res) => {
     const contract = generateContract(deal);
     const updatedDeal = await updateDeal(deal.id, { contract });
 
+    // 🔔 إشعار للـ Farmer باستخدام userId الحقيقي
+    const io = req.app.get('io');
+    const farmer = await getFarmerById(farmerId); // نجلب المستخدم من جدول farmers
+    const farmerUserId = farmer?.userId; // هذا هو الـ user.id الحقيقي
+
+    if (!farmerUserId) {
+      console.warn(`⚠️ Farmer with id ${farmerId} has no associated user`);
+    } else {
+      const notification = await createNotification({
+        userId: farmerUserId, // ✅ استخدمنا userId الحقيقي
+        type: 'deal_status',
+        title: 'New Deal Created 🤝',
+        body: `New deal for ${productType}: $${price} × ${quantity} units`,
+        link: `/deals/${deal.id}`,
+      });
+
+      if (io) {
+        io.to(`user_${farmerUserId}`).emit('new_notification', notification);
+      }
+    }
+
     return res.status(201).json({
       message: 'Deal created successfully',
       deal: updatedDeal,
@@ -82,7 +104,7 @@ export const createDealController = async (req, res) => {
   }
 };
 
-// GET /deals/my — كل الـ Deals تبع المستخدم
+// ─── GET /deals/my — كل الـ Deals تبع المستخدم ──────────────
 export const getMyDealsController = async (req, res) => {
   try {
     const role = req.user.role;
@@ -107,7 +129,7 @@ export const getMyDealsController = async (req, res) => {
   }
 };
 
-// GET /deals/:id — تفاصيل Deal
+// ─── GET /deals/:id — تفاصيل Deal ──────────────────────────
 export const getDealController = async (req, res) => {
   try {
     const deal = await getDealById(req.params.id);
@@ -122,7 +144,7 @@ export const getDealController = async (req, res) => {
   }
 };
 
-// POST /deals/:id/contract/sign — توقيع العقد
+// ─── POST /deals/:id/contract/sign — توقيع العقد ──────────
 export const signContractController = async (req, res) => {
   try {
     const role = req.user.role;
@@ -149,6 +171,36 @@ export const signContractController = async (req, res) => {
     const updatedDeal = await signContract(deal.id, role);
     const bothSigned = updatedDeal.contract?.status === 'locked';
 
+    // 🔔 إشعار للطرف الآخر باستخدام userId الحقيقي
+    const io = req.app.get('io');
+    let receiverUserId;
+
+    if (role === 'buyer') {
+      // المستقبل هو المزارع
+      const farmer = await getFarmerById(deal.farmerId);
+      receiverUserId = farmer?.userId;
+    } else {
+      // المستقبل هو المشتري
+      const buyer = await getBuyerById(deal.buyerId);
+      receiverUserId = buyer?.userId;
+    }
+
+    if (receiverUserId) {
+      const notification = await createNotification({
+        userId: receiverUserId, // ✅ استخدمنا userId الحقيقي
+        type: 'deal_status',
+        title: `${role === 'buyer' ? 'Buyer' : 'Farmer'} Signed Contract ✍️`,
+        body: `The ${role} has signed the contract for deal #${deal.id}`,
+        link: `/deals/${deal.id}`,
+      });
+
+      if (io) {
+        io.to(`user_${receiverUserId}`).emit('new_notification', notification);
+      }
+    } else {
+      console.warn(`⚠️ Could not find user for ${role === 'buyer' ? 'buyer' : 'farmer'} with id ${role === 'buyer' ? deal.buyerId : deal.farmerId}`);
+    }
+
     return res.status(200).json({
       message: bothSigned
         ? 'Contract signed and locked! Deal is now active.'
@@ -167,7 +219,7 @@ export const signContractController = async (req, res) => {
   }
 };
 
-// GET /deals/:id/contract/pdf — تحميل العقد كـ PDF
+// ─── GET /deals/:id/contract/pdf — تحميل العقد PDF ──────────
 export const getContractPDFController = async (req, res) => {
   try {
     const deal = await getDealById(req.params.id);
@@ -191,6 +243,72 @@ export const getContractPDFController = async (req, res) => {
 
   } catch (error) {
     console.error('GET CONTRACT PDF ERROR:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// ─── PATCH /deals/:id/status — تغيير حالة الصفقة ──────────
+export const updateDealStatusController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const role = req.user.role;
+
+    if (!['pending', 'confirmed', 'active', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const deal = await getDealById(id);
+    if (!deal) {
+      return res.status(404).json({ message: 'Deal not found' });
+    }
+
+    // تحقق إن المستخدم طرف في الصفقة
+    const buyer = role === 'buyer' ? await getBuyerByUserId(req.user.id) : null;
+    const farmer = role === 'farmer' ? await getFarmerByUserId(req.user.id) : null;
+
+    if (role === 'buyer' && deal.buyerId !== buyer?.id) {
+      return res.status(403).json({ message: 'You are not the buyer of this deal' });
+    }
+    if (role === 'farmer' && deal.farmerId !== farmer?.id) {
+      return res.status(403).json({ message: 'You are not the farmer of this deal' });
+    }
+
+    const updatedDeal = await updateDeal(id, { status });
+
+    // 🔔 إشعار للطرف الآخر باستخدام userId الحقيقي
+    const io = req.app.get('io');
+    let receiverUserId;
+
+    if (role === 'buyer') {
+      const farmer = await getFarmerById(deal.farmerId);
+      receiverUserId = farmer?.userId;
+    } else {
+      const buyer = await getBuyerById(deal.buyerId);
+      receiverUserId = buyer?.userId;
+    }
+
+    if (receiverUserId) {
+      const notification = await createNotification({
+        userId: receiverUserId, // ✅ استخدمنا userId الحقيقي
+        type: 'deal_status',
+        title: `Deal Status Updated 🔄`,
+        body: `Deal #${deal.id} status changed to ${status}`,
+        link: `/deals/${deal.id}`,
+      });
+
+      if (io) {
+        io.to(`user_${receiverUserId}`).emit('new_notification', notification);
+      }
+    }
+
+    return res.status(200).json({
+      message: 'Deal status updated successfully',
+      deal: updatedDeal,
+    });
+
+  } catch (error) {
+    console.error('UPDATE DEAL STATUS ERROR:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
