@@ -90,3 +90,16 @@ export const getAllQOs = async (filters = {}) => {
 
   return await qoRepository.find({ where });
 };
+export const getQoByUserId = async (userId) => {
+  const qo = await qoRepository.findOne({
+    where: { userId }
+  });
+
+  if (!qo) {
+    const error = new Error("Quality Officer not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return qo;
+};

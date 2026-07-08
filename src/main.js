@@ -14,6 +14,7 @@ import { startCronJobs } from './config/cron.js';
 import buyerRouter from './buyer/buyer.router.js';
 import rfqRouter from './rfq/rfq.router.js';
 import dealRouter from './deals/deal.router.js';
+import inspectionRouter from './inspection/inspection.router.js';
 import messageRouter from './messages/message.router.js';
 import notificationRouter from './notifications/notification.router.js';
 
@@ -90,6 +91,7 @@ app.use('/listings', listingsRouter);
 app.use('/buyer', buyerRouter);
 app.use('/rfqs', rfqRouter);
 app.use('/deals', dealRouter);
+app.use('/inspection', inspectionRouter);
 app.use('/deals/:id/messages', messageRouter);
 app.use('/notifications', notificationRouter);
 
