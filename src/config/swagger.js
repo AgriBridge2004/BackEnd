@@ -31,6 +31,8 @@ const options = {
     './src/buyer/buyer.router.js',
     './src/rfq/rfq.router.js',
     './src/deals/deal.router.js',
+    './src/QO/QO.router.js',
+    './src/inspection/inspection.router.js',
   ],
 };
 

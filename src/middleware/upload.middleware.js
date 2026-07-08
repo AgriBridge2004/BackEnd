@@ -40,6 +40,13 @@ export const uploadToCloudinary = (buffer, folder = 'farmers') => {
   });
 };
 
+export const uploadFields = (fields) => {
+  return multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }).fields(fields);
+};
+
 // رفع كل الصور المرفوعة على Cloudinary ويرجع URLs
 export const processUploadedImages = async (files = {}) => {
   const result = {};
@@ -57,4 +64,28 @@ export const processUploadedImages = async (files = {}) => {
   }
 
   return result;
+};
+
+// رفع مصفوفة صور من نفس الحقل (لحالات الصور المتعددة زي تقرير التفتيش)
+export const processMultipleUploadedImages = async (files = {}, fieldName, folder = 'agribridge') => {
+  const fileArray = files[fieldName];
+
+  if (!fileArray || fileArray.length === 0) {
+    return [];
+  }
+
+  const urls = [];
+
+  for (const file of fileArray) {
+    if (file?.buffer) {
+      try {
+        const url = await uploadToCloudinary(file.buffer, folder);
+        urls.push(url);
+      } catch (error) {
+        throw new Error(`Failed to upload ${fieldName}: ${error.message}`);
+      }
+    }
+  }
+
+  return urls;
 };

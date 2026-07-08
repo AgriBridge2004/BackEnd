@@ -46,10 +46,10 @@ export const QualityOfficerEntity = new EntitySchema({
       joinColumn: { name: "userId" },
       onDelete: "CASCADE",
     },
-    // inspections: {
-    //   target: "Inspection",
-    //   type: "one-to-many",
-    //   inverseSide: "qo",
-    // },
+    inspections: {
+      target: "Inspection",
+      type: "one-to-many",
+      inverseSide: "qo",
+    },
   },
 });

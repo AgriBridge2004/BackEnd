@@ -11,6 +11,7 @@ import { startCronJobs } from './config/cron.js';
 import buyerRouter from './buyer/buyer.router.js';
 import rfqRouter from './rfq/rfq.router.js';
 import dealRouter from './deals/deal.router.js';
+import inspectionRouter from './inspection/inspection.router.js';
 dotenv.config();
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/listings', listingsRouter);
 app.use('/buyer', buyerRouter);
 app.use('/rfqs', rfqRouter);
 app.use('/deals', dealRouter);
+app.use('/inspection', inspectionRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'AgriBridge API is running 🚀' });
