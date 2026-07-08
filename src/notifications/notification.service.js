@@ -1,6 +1,7 @@
 import { AppDataSource } from '../config/database.js';
 import { NotificationEntity } from './notification.entity.js';
 
+
 const notificationRepo = () => AppDataSource.getRepository(NotificationEntity);
 
 export const createNotification = async (data) => {

@@ -3,6 +3,8 @@
 import { AppDataSource } from '../config/database.js';
 import { InspectionEntity } from './inspection.entity.js';
 import { InspectionPhotoEntity } from './inspection-photo.entity.js';
+import { createNotification } from '../notifications/notification.service.js';
+import { getQOById } from '../QO/QO.service.js';
 
 const inspectionRepo = () => AppDataSource.getRepository(InspectionEntity);
 const photoRepo = () => AppDataSource.getRepository(InspectionPhotoEntity);
@@ -30,7 +32,26 @@ export const assignInspection = async (assignData) => {
       status: 'assigned',
     });
 
-    return await repo.save(inspection);
+    const saved = await repo.save(inspection);
+
+    // ✅ إشعار QO بالتكليف الجديد
+    try {
+      const qo = await getQOById(assignData.qoId);
+      if (qo?.userId) {
+        await createNotification({
+          userId: qo.userId,
+          type: 'inspection_assigned',
+          title: 'تكليف تفتيش جديد',
+          body: `تم تكليفك بتفتيش في ${assignData.inspectionLocation} بتاريخ ${assignData.requiredDate}`,
+          link: `/inspection/inspections/${saved.id}`,
+        });
+      }
+    } catch (notifyError) {
+      // ✅ فشل الإشعار ما لازم يوقف عملية التعيين نفسها
+      console.error('FAILED TO NOTIFY QO ON ASSIGNMENT:', notifyError.message);
+    }
+
+    return saved;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to assign inspection: ${message}`);
@@ -73,7 +94,11 @@ export const submitReport = async (inspectionId, qoId, reportData) => {
   try {
     const repo = inspectionRepo();
 
-    const inspection = await repo.findOne({ where: { id: inspectionId } });
+    // ✅ لازم نجيب علاقة الصفقة عشان نعرف مين المزارع والمشتري لاحقًا
+    const inspection = await repo.findOne({
+      where: { id: inspectionId },
+      relations: ['deal'],
+    });
 
     if (!inspection) {
       throw new Error('التفتيش غير موجود');
@@ -109,10 +134,49 @@ export const submitReport = async (inspectionId, qoId, reportData) => {
     );
     await photoRepo().save(photos);
 
+    // ✅ إشعار الطرفين (المزارع والمشتري) بجاهزية التقرير
+    try {
+      await notifyReportSubmitted(saved);
+    } catch (notifyError) {
+      // ✅ فشل الإشعار ما لازم يوقف عملية حفظ التقرير نفسها
+      console.error('FAILED TO NOTIFY PARTIES ON REPORT SUBMISSION:', notifyError.message);
+    }
+
     return await getInspectionById(saved.id);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to submit report: ${message}`);
+  }
+};
+
+// ─────────────────────────────────────────
+// Helper: إرسال إشعار للمزارع والمشتري بعد تقديم التقرير
+// ⚠️ افتراضي مؤقتًا: بيعتمد على شكل علاقة Deal.farmer / Deal.buyer
+// لازم تأكيد شكل Deal.entity.js لضبطها بدقة
+// ─────────────────────────────────────────
+const notifyReportSubmitted = async (savedInspection) => {
+  const outcomeLabels = {
+    approved: 'تمت الموافقة',
+    partially_approved: 'موافقة جزئية',
+    rejected: 'مرفوض',
+  };
+  const outcomeText = outcomeLabels[savedInspection.outcome] || savedInspection.outcome;
+
+  const deal = savedInspection.deal;
+  if (!deal) return;
+
+  const notifyTargets = [];
+  if (deal.farmer?.userId) notifyTargets.push(deal.farmer.userId);
+  if (deal.buyer?.userId) notifyTargets.push(deal.buyer.userId);
+
+  for (const targetUserId of notifyTargets) {
+    await createNotification({
+      userId: targetUserId,
+      type: 'inspection_report_submitted',
+      title: 'تقرير التفتيش جاهز',
+      body: `تم تقديم تقرير التفتيش لصفقتك. النتيجة: ${outcomeText}`,
+      link: `/deals/${savedInspection.dealId}`,
+    });
   }
 };
 
