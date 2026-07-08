@@ -14,7 +14,9 @@ export const NotificationEntity = new EntitySchema({
     },
     type: {
       type: 'enum',
-      enum: ['new_message', 'new_offer', 'deal_status', 'quote_action'],
+      enum: ['new_message', 'new_offer', 'deal_status', 'quote_action', 'inspection_assigned',        // ✅ جديد
+    'inspection_report_submitted', // ✅ جديد
+  ],
     },
     title: {
       type: 'varchar',
