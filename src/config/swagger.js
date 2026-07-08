@@ -33,6 +33,8 @@ const options = {
     './src/deals/deal.router.js',
     './src/QO/QO.router.js',
     './src/inspection/inspection.router.js',
+    './src/messages/message.router.js',
+    './src/notifications/notification.router.js', // ← ضيف هاد
   ],
 };
 
