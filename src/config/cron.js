@@ -2,8 +2,10 @@ import cron from 'node-cron';
 import { AppDataSource } from './database.js';
 import { ListingEntity } from '../listings/listing.entity.js';
 import { sendListingExpiredEmail } from './mailer.js';
+import { autoResolveDisputes } from '../disputes/dispute.service.js';
 
 export const startCronJobs = () => {
+  // ─── Job 1: Listing Expiry (كل يوم منتصف الليل) ───────────
   cron.schedule('0 0 * * *', async () => {
     console.log('⏰ Running listing expiry check...');
 
@@ -37,7 +39,25 @@ export const startCronJobs = () => {
       console.log(`✅ ${expiredListings.length} listings marked as Expired`);
 
     } catch (error) {
-      console.error('CRON JOB ERROR:', error);
+      console.error('LISTING EXPIRY CRON ERROR:', error);
+    }
+  });
+
+  // ─── Job 2: Auto-Resolve Disputes (كل ساعة) ───────────────
+  cron.schedule('0 * * * *', async () => {
+    console.log('⏰ Running auto-resolve disputes check...');
+
+    try {
+      const results = await autoResolveDisputes();
+
+      if (results.length > 0) {
+        console.log(`✅ Auto-resolved ${results.length} disputes`);
+      } else {
+        console.log('✅ No disputes to auto-resolve');
+      }
+
+    } catch (error) {
+      console.error('DISPUTE AUTO-RESOLVE CRON ERROR:', error);
     }
   });
 

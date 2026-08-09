@@ -17,13 +17,15 @@ import dealRouter from './deals/deal.router.js';
 import inspectionRouter from './inspection/inspection.router.js';
 import messageRouter from './messages/message.router.js';
 import notificationRouter from './notifications/notification.router.js';
+import reviewRouter from './reviews/review.router.js';
+import disputeRouter from './disputes/dispute.router.js';
+import qoRouter from './QO/QO.router.js'; // ✅ إضافة
 
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 
-// ─── Socket.io Setup ───────────────────────────────
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
@@ -31,7 +33,6 @@ const io = new Server(httpServer, {
   },
 });
 
-// JWT Auth على Socket
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
   if (!token) {
@@ -46,23 +47,19 @@ io.use((socket, next) => {
   }
 });
 
-// Socket Events
 io.on('connection', (socket) => {
   console.log(`✅ Socket connected: ${socket.user.id}`);
 
-  // المستخدم يدخل غرفة الـ Deal
   socket.on('join_deal', (dealId) => {
     socket.join(`deal_${dealId}`);
     console.log(`User ${socket.user.id} joined deal_${dealId}`);
   });
 
-  // المستخدم يدخل غرفة الإشعارات الخاصة فيه
   socket.on('join_notifications', () => {
     socket.join(`user_${socket.user.id}`);
     console.log(`User ${socket.user.id} joined notifications room`);
   });
 
-  // المستخدم يخرج من غرفة الـ Deal
   socket.on('leave_deal', (dealId) => {
     socket.leave(`deal_${dealId}`);
     console.log(`User ${socket.user.id} left deal_${dealId}`);
@@ -73,18 +70,20 @@ io.on('connection', (socket) => {
   });
 });
 
-// نخلي الـ io متاح للـ controllers
 app.set('io', io);
 
-// ─── Middleware ────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// ─── Swagger ───────────────────────────────────────
+// ============================================================
+// SWAGGER DOCUMENTATION
+// ============================================================
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// ─── Routes ────────────────────────────────────────
+// ============================================================
+// ROUTES
+// ============================================================
 app.use('/auth', authRouter);
 app.use('/farmer', farmerRouter);
 app.use('/listings', listingsRouter);
@@ -94,22 +93,61 @@ app.use('/deals', dealRouter);
 app.use('/inspection', inspectionRouter);
 app.use('/deals/:id/messages', messageRouter);
 app.use('/notifications', notificationRouter);
+app.use('/reviews', reviewRouter);
+app.use('/disputes', disputeRouter);
+app.use('/qo', qoRouter); // ← ناقص // ✅ إضافة Route النزاعات
 
+// ============================================================
+// HEALTH CHECK
+// ============================================================
 app.get('/', (req, res) => {
-  res.json({ message: 'AgriBridge API is running 🚀' });
+  res.json({ 
+    message: 'AgriBridge API is running 🚀',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/auth',
+      farmers: '/farmer',
+      listings: '/listings',
+      buyers: '/buyer',
+      rfqs: '/rfqs',
+      deals: '/deals',
+      inspection: '/inspection',
+      messages: '/deals/:id/messages',
+      notifications: '/notifications',
+      reviews: '/reviews',
+      disputes: '/disputes',
+       qo: '/qo', // ← ضيف هاد
+      docs: '/api-docs',
+    }
+  });
 });
 
-// ─── Start Server ──────────────────────────────────
+// ============================================================
+// ERROR HANDLING MIDDLEWARE
+// ============================================================
+app.use((err, req, res, next) => {
+  console.error('❌ Global error handler:', err);
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+});
+
+// ============================================================
+// START SERVER
+// ============================================================
 const PORT = process.env.PORT || 3000;
 
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📚 Swagger docs available at: http://localhost:${PORT}/api-docs`);
 });
 
 AppDataSource.initialize()
   .then(() => {
     console.log('✅ Database connected');
     startCronJobs();
+    console.log('⏰ Cron jobs started');
   })
   .catch((error) => {
     console.error('❌ Database connection failed:', error);
