@@ -34,7 +34,9 @@ const options = {
     './src/QO/QO.router.js',
     './src/inspection/inspection.router.js',
     './src/messages/message.router.js',
-    './src/notifications/notification.router.js', // ← ضيف هاد
+    './src/notifications/notification.router.js',
+    './src/reviews/review.router.js',
+    './src/disputes/dispute.router.js', 
   ],
 };
 

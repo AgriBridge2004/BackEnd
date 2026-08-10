@@ -7,9 +7,9 @@ import {
   signContract,
   generateContractPDF,
 } from './deal.service.js';
-import { getBuyerByUserId, getBuyerById } from '../buyer/buyer.service.js';  // ✅ أضفنا getBuyerById
-import { getFarmerByUserId, getFarmerById } from '../farmer/farmer.service.js'; // ✅ أضفنا getFarmerById
-import { getRFQById } from '../rfq/rfq.service.js';
+import { getBuyerByUserId, getBuyerById } from '../buyer/buyer.service.js';
+import { getFarmerByUserId, getFarmerById } from '../farmer/farmer.service.js';
+import { getRFQById, getQuotesByRFQ } from '../rfq/rfq.service.js';
 import { getListingById } from '../listings/listing.service.js';
 import { createNotification } from '../notifications/notification.service.js';
 
@@ -34,7 +34,18 @@ export const createDealController = async (req, res) => {
 
       const rfq = await getRFQById(rfqId);
       if (!rfq) return res.status(404).json({ message: 'RFQ not found' });
-      if (rfq.status !== 'closed') return res.status(400).json({ message: 'RFQ must be closed (accepted) to create a deal' });
+
+      // نقبل لو RFQ مغلق أو في quote بحالة accepted أو countered
+      const quotes = await getQuotesByRFQ(rfqId);
+      const validQuote = quotes.find(q =>
+        q.status === 'accepted' || q.status === 'countered'
+      );
+
+      if (rfq.status !== 'closed' && !validQuote) {
+        return res.status(400).json({
+          message: 'RFQ must be closed or have an accepted/countered quote to create a deal',
+        });
+      }
 
       productType = rfq.productType;
       location = rfq.location;
@@ -72,16 +83,16 @@ export const createDealController = async (req, res) => {
     const contract = generateContract(deal);
     const updatedDeal = await updateDeal(deal.id, { contract });
 
-    // 🔔 إشعار للـ Farmer باستخدام userId الحقيقي
+    // 🔔 إشعار للـ Farmer
     const io = req.app.get('io');
-    const farmer = await getFarmerById(farmerId); // نجلب المستخدم من جدول farmers
-    const farmerUserId = farmer?.userId; // هذا هو الـ user.id الحقيقي
+    const farmer = await getFarmerById(farmerId);
+    const farmerUserId = farmer?.userId;
 
     if (!farmerUserId) {
       console.warn(`⚠️ Farmer with id ${farmerId} has no associated user`);
     } else {
       const notification = await createNotification({
-        userId: farmerUserId, // ✅ استخدمنا userId الحقيقي
+        userId: farmerUserId,
         type: 'deal_status',
         title: 'New Deal Created 🤝',
         body: `New deal for ${productType}: $${price} × ${quantity} units`,
@@ -171,23 +182,21 @@ export const signContractController = async (req, res) => {
     const updatedDeal = await signContract(deal.id, role);
     const bothSigned = updatedDeal.contract?.status === 'locked';
 
-    // 🔔 إشعار للطرف الآخر باستخدام userId الحقيقي
+    // 🔔 إشعار للطرف الآخر
     const io = req.app.get('io');
     let receiverUserId;
 
     if (role === 'buyer') {
-      // المستقبل هو المزارع
       const farmer = await getFarmerById(deal.farmerId);
       receiverUserId = farmer?.userId;
     } else {
-      // المستقبل هو المشتري
       const buyer = await getBuyerById(deal.buyerId);
       receiverUserId = buyer?.userId;
     }
 
     if (receiverUserId) {
       const notification = await createNotification({
-        userId: receiverUserId, // ✅ استخدمنا userId الحقيقي
+        userId: receiverUserId,
         type: 'deal_status',
         title: `${role === 'buyer' ? 'Buyer' : 'Farmer'} Signed Contract ✍️`,
         body: `The ${role} has signed the contract for deal #${deal.id}`,
@@ -197,8 +206,6 @@ export const signContractController = async (req, res) => {
       if (io) {
         io.to(`user_${receiverUserId}`).emit('new_notification', notification);
       }
-    } else {
-      console.warn(`⚠️ Could not find user for ${role === 'buyer' ? 'buyer' : 'farmer'} with id ${role === 'buyer' ? deal.buyerId : deal.farmerId}`);
     }
 
     return res.status(200).json({
@@ -234,10 +241,7 @@ export const getContractPDFController = async (req, res) => {
     const pdfBuffer = await generateContractPDF(deal);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename=contract-${deal.id}.pdf`
-    );
+    res.setHeader('Content-Disposition', `attachment; filename=contract-${deal.id}.pdf`);
 
     return res.send(pdfBuffer);
 
@@ -263,7 +267,6 @@ export const updateDealStatusController = async (req, res) => {
       return res.status(404).json({ message: 'Deal not found' });
     }
 
-    // تحقق إن المستخدم طرف في الصفقة
     const buyer = role === 'buyer' ? await getBuyerByUserId(req.user.id) : null;
     const farmer = role === 'farmer' ? await getFarmerByUserId(req.user.id) : null;
 
@@ -276,7 +279,7 @@ export const updateDealStatusController = async (req, res) => {
 
     const updatedDeal = await updateDeal(id, { status });
 
-    // 🔔 إشعار للطرف الآخر باستخدام userId الحقيقي
+    // 🔔 إشعار للطرف الآخر
     const io = req.app.get('io');
     let receiverUserId;
 
@@ -290,7 +293,7 @@ export const updateDealStatusController = async (req, res) => {
 
     if (receiverUserId) {
       const notification = await createNotification({
-        userId: receiverUserId, // ✅ استخدمنا userId الحقيقي
+        userId: receiverUserId,
         type: 'deal_status',
         title: `Deal Status Updated 🔄`,
         body: `Deal #${deal.id} status changed to ${status}`,

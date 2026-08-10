@@ -90,7 +90,7 @@ export const resendOtp = async (email) => {
 
   sendOtpEmail(email, otp).catch(err => console.error('Failed to resend OTP email:', err));
 
-  return { message: 'OTP resent successfully' };
+ return { otp, message: 'OTP resent successfully' };
 };
 
 export const loginUser = async (email, password) => {

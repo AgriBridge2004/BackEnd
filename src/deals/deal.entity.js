@@ -52,11 +52,11 @@ export const DealEntity = new EntitySchema({
       nullable: true,
     },
     // حالة الـ Deal
-    status: {
-      type: 'enum',
-      enum: ['pending', 'confirmed', 'active', 'completed', 'cancelled'],
-      default: 'pending',
-    },
+   status: {
+  type: 'enum',
+  enum: ['pending', 'confirmed', 'active', 'completed', 'cancelled', 'disputed'],
+  default: 'pending',
+},
     // العقد
     contract: {
       type: 'jsonb',
