@@ -24,6 +24,10 @@ export const UserEntity = new EntitySchema({
       type: 'boolean',
       default: false,
     },
+    isSuspended: {
+      type: 'boolean',
+      default: false,
+    },
     otp: {
       type: 'varchar',
       nullable: true,

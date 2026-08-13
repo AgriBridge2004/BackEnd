@@ -20,6 +20,7 @@ import notificationRouter from './notifications/notification.router.js';
 import reviewRouter from './reviews/review.router.js';
 import disputeRouter from './disputes/dispute.router.js';
 import qoRouter from './QO/QO.router.js'; // ✅ إضافة
+import adminRouter from './admin/admin.router.js';
 
 dotenv.config();
 
@@ -96,6 +97,7 @@ app.use('/notifications', notificationRouter);
 app.use('/reviews', reviewRouter);
 app.use('/disputes', disputeRouter);
 app.use('/qo', qoRouter); // ← ناقص // ✅ إضافة Route النزاعات
+app.use('/admin', adminRouter);
 
 // ============================================================
 // HEALTH CHECK
@@ -117,6 +119,7 @@ app.get('/', (req, res) => {
       reviews: '/reviews',
       disputes: '/disputes',
        qo: '/qo', // ← ضيف هاد
+      admin: '/admin',
       docs: '/api-docs',
     }
   });

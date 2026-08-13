@@ -129,6 +129,9 @@ export const login = async (req, res) => {
     if (error.message === 'Email not verified') {
       return res.status(403).json({ message: error.message });
     }
+    if (error.message === 'Account suspended') {
+      return res.status(403).json({ message: error.message });
+    }
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 };
