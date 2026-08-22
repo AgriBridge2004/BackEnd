@@ -104,6 +104,10 @@ export const loginUser = async (email, password) => {
     throw new Error('Email not verified');
   }
 
+  if (user.isSuspended) {
+    throw new Error('Account suspended');
+  }
+
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new Error('Invalid credentials');

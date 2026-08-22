@@ -18,7 +18,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    if (!['farmer', 'buyer', 'quality_officer', 'admin'].includes(role)) {
+    if (!['farmer', 'buyer', 'admin', 'quality_officer'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role' });
     }
 
@@ -127,6 +127,9 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('LOGIN ERROR:', error);
     if (error.message === 'Email not verified') {
+      return res.status(403).json({ message: error.message });
+    }
+    if (error.message === 'Account suspended') {
       return res.status(403).json({ message: error.message });
     }
     return res.status(401).json({ message: 'Invalid credentials' });
