@@ -37,6 +37,7 @@ const options = {
     './src/notifications/notification.router.js',
     './src/reviews/review.router.js',
     './src/disputes/dispute.router.js', 
+    './src/admin/admin.router.js',
   ],
 };
 
