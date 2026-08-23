@@ -49,6 +49,48 @@ export const ListingEntity = new EntitySchema({
       type: 'simple-array',
       nullable: true,
     },
+    // ─── Extra Fields ───────────────────────────────
+    harvestDate: {
+      type: 'date',
+      nullable: true,
+    },
+    grade: {
+      type: 'enum',
+      enum: ['A', 'B', 'C'],
+      nullable: true,
+    },
+    variety: {
+      type: 'varchar',
+      nullable: true,
+    },
+    farmingMethod: {
+      type: 'enum',
+      enum: ['Organic', 'Conventional', 'Hydroponic', 'Other'],
+      nullable: true,
+    },
+    packaging: {
+      type: 'varchar',
+      nullable: true,
+    },
+    shelfLife: {
+      type: 'varchar',
+      nullable: true,
+    },
+    storage: {
+      type: 'varchar',
+      nullable: true,
+    },
+    certifications: {
+      type: 'simple-array',
+      nullable: true,
+    },
+    listingType: {
+      type: 'enum',
+      enum: ['Spot', 'Pre-Harvest'],
+      default: 'Spot',
+      nullable: true,
+    },
+    // ────────────────────────────────────────────────
     search_vector: {
       type: 'tsvector',
       nullable: true,

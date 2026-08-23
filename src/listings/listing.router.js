@@ -8,6 +8,10 @@ import {
   uploadListingImagesController,
   getAllListingsController,
   deleteListingImageController,
+  getSavedListingsController,
+  saveListingController,
+  unsaveListingController,
+  getSimilarListingsController,
 } from './listing.controller.js';
 import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 import { uploadFarmerImages } from '../middleware/upload.middleware.js';
@@ -20,7 +24,7 @@ const router = Router();
  * @swagger
  * /listings:
  *   get:
- *     summary: Get all available listings with filter and search (public)
+ *     summary: Get all available listings with filter, search, sort and pagination (public)
  *     tags: [Listings]
  *     parameters:
  *       - in: query
@@ -57,9 +61,32 @@ const router = Router();
  *         name: qty_max
  *         schema:
  *           type: number
+ *       - in: query
+ *         name: listingType
+ *         schema:
+ *           type: string
+ *           enum: [Spot, Pre-Harvest]
+ *       - in: query
+ *         name: grade
+ *         schema:
+ *           type: string
+ *           enum: [A, B, C]
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [newest, oldest, price_asc, price_desc]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: List of all available listings
+ *         description: List of all available listings with pagination
  */
 router.get('/', getAllListingsController);
 
@@ -98,6 +125,29 @@ router.get('/', getAllListingsController);
  *                 type: string
  *               expiry:
  *                 type: string
+ *               harvestDate:
+ *                 type: string
+ *               grade:
+ *                 type: string
+ *                 enum: [A, B, C]
+ *               variety:
+ *                 type: string
+ *               farmingMethod:
+ *                 type: string
+ *                 enum: [Organic, Conventional, Hydroponic, Other]
+ *               packaging:
+ *                 type: string
+ *               shelfLife:
+ *                 type: string
+ *               storage:
+ *                 type: string
+ *               certifications:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               listingType:
+ *                 type: string
+ *                 enum: [Spot, Pre-Harvest]
  *     responses:
  *       201:
  *         description: Listing created successfully
@@ -107,6 +157,20 @@ router.get('/', getAllListingsController);
  *         description: Access denied
  */
 router.post('/', verifyToken, verifyRole('farmer'), validate(createListingSchema), createListingController);
+
+/**
+ * @swagger
+ * /listings/saved:
+ *   get:
+ *     summary: Get saved listings (wishlist)
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of saved listings
+ */
+router.get('/saved', verifyToken, getSavedListingsController);
 
 /**
  * @swagger
@@ -153,8 +217,6 @@ router.get('/my', verifyToken, verifyRole('farmer'), getMyListingsController);
  *         description: Images uploaded successfully
  *       400:
  *         description: Maximum 10 images allowed
- *       403:
- *         description: Access denied
  */
 router.patch(
   '/:id/images',
@@ -201,17 +263,68 @@ router.patch(
  *     responses:
  *       200:
  *         description: Image deleted successfully
- *       404:
- *         description: Image or listing not found
- *       403:
- *         description: Access denied
  */
-router.delete(
-  '/:id/images',
-  verifyToken,
-  verifyRole('farmer'),
-  deleteListingImageController
-);
+router.delete('/:id/images', verifyToken, verifyRole('farmer'), deleteListingImageController);
+
+/**
+ * @swagger
+ * /listings/{id}/save:
+ *   post:
+ *     summary: Save a listing to wishlist
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *         description: Listing saved successfully
+ *       409:
+ *         description: Listing already saved
+ */
+router.post('/:id/save', verifyToken, saveListingController);
+
+/**
+ * @swagger
+ * /listings/{id}/save:
+ *   delete:
+ *     summary: Remove a listing from wishlist
+ *     tags: [Listings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Listing removed from saved
+ */
+router.delete('/:id/save', verifyToken, unsaveListingController);
+
+/**
+ * @swagger
+ * /listings/{id}/similar:
+ *   get:
+ *     summary: Get similar listings
+ *     tags: [Listings]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of similar listings
+ */
+router.get('/:id/similar', getSimilarListingsController);
 
 /**
  * @swagger
@@ -250,8 +363,6 @@ router.get('/:id', getListingController);
  *     responses:
  *       200:
  *         description: Listing updated successfully
- *       400:
- *         description: Validation error
  */
 router.put('/:id', verifyToken, verifyRole('farmer'), validate(updateListingSchema), updateListingController);
 

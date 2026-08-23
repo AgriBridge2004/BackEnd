@@ -12,6 +12,11 @@ export const createRFQSchema = Joi.object({
 export const createQuoteSchema = Joi.object({
   price: Joi.number().positive().required(),
   message: Joi.string().max(500).optional(),
+  // ─── Extra Fields ───────────────────────────────
+  quantity: Joi.number().positive().optional(),
+  deliveryTerms: Joi.string().valid('FOB', 'Delivered').optional(),
+  validUntil: Joi.date().optional(),
+  certificateUrl: Joi.string().uri().optional(),
 });
 
 export const updateQuoteSchema = Joi.object({

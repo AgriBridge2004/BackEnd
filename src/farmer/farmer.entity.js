@@ -23,17 +23,14 @@ export const FarmerEntity = new EntitySchema({
       type: "text",
       nullable: true,
     },
-
-    
     region: {
       type: "varchar",
       nullable: true,
     },
     farmSize: {
-      type: "float",        // بالدونم أو الهكتار
+      type: "float",
       nullable: true,
     },
-
     // صورة شخصية
     profileImage: {
       type: "varchar",
@@ -44,6 +41,24 @@ export const FarmerEntity = new EntitySchema({
       type: "varchar",
       nullable: true,
     },
+    // ─── Extra Fields ───────────────────────────────
+    specialties: {
+      type: "simple-array",
+      nullable: true,
+    },
+    certifications: {
+      type: "simple-array",
+      nullable: true,
+    },
+    businessLicense: {
+      type: "varchar",
+      nullable: true,
+    },
+    isVerified: {
+      type: "boolean",
+      default: false,
+    },
+    // ────────────────────────────────────────────────
     userId: {
       type: "uuid",
       nullable: true,

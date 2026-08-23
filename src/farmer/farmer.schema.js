@@ -8,6 +8,10 @@ export const createFarmerSchema = Joi.object({
   cropTypes: Joi.string().max(200).optional(),
   region: Joi.string().max(100).optional(),
   farmSize: Joi.number().positive().optional(),
+  // ─── Extra Fields ───────────────────────────────
+  specialties: Joi.array().items(Joi.string()).optional(),
+  certifications: Joi.array().items(Joi.string().uri()).optional(),
+  businessLicense: Joi.string().uri().optional(),
 });
 
 export const updateFarmerSchema = Joi.object({
@@ -18,4 +22,8 @@ export const updateFarmerSchema = Joi.object({
   cropTypes: Joi.string().max(200).optional(),
   region: Joi.string().max(100).optional(),
   farmSize: Joi.number().positive().optional(),
+  // ─── Extra Fields ───────────────────────────────
+  specialties: Joi.array().items(Joi.string()).optional(),
+  certifications: Joi.array().items(Joi.string().uri()).optional(),
+  businessLicense: Joi.string().uri().optional(),
 });

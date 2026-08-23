@@ -25,6 +25,25 @@ export const QuoteEntity = new EntitySchema({
       type: 'float',
       nullable: true,
     },
+    // ─── Extra Fields ───────────────────────────────
+    deliveryTerms: {
+      type: 'enum',
+      enum: ['FOB', 'Delivered'],
+      nullable: true,
+    },
+    validUntil: {
+      type: 'date',
+      nullable: true,
+    },
+    certificateUrl: {
+      type: 'varchar',
+      nullable: true,
+    },
+    quantity: {
+      type: 'float',
+      nullable: true,
+    },
+    // ────────────────────────────────────────────────
     rfqId: {
       type: 'uuid',
       nullable: true,

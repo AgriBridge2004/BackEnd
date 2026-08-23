@@ -1,8 +1,9 @@
 import { AppDataSource } from '../config/database.js';
 import { ListingEntity } from './listing.entity.js';
-import { v2 as cloudinary } from 'cloudinary';
+import { SavedListingEntity } from './savedListing.entity.js';
 
 const listingRepo = () => AppDataSource.getRepository(ListingEntity);
+const savedRepo = () => AppDataSource.getRepository(SavedListingEntity);
 
 export const createListing = async (listingData) => {
   const listing = listingRepo().create(listingData);
@@ -52,30 +53,6 @@ export const deleteListing = async (id, farmerId) => {
   return await listingRepo().remove(listing);
 };
 
-export const deleteListingImage = async (id, imageUrl, farmerId) => {
-  const repo = listingRepo();
-  const listing = await repo.findOne({ where: { id } });
-
-  if (!listing) throw new Error('Listing not found');
-  if (listing.farmerId !== farmerId) throw new Error('Unauthorized');
-
-  // تأكد إن الصورة موجودة فعلاً بالـ listing
-  const existingImages = listing.images || [];
-  if (!existingImages.includes(imageUrl)) {
-    throw new Error('Image not found in this listing');
-  }
-
-  // احذف الصورة من Cloudinary
-  const publicId = imageUrl.split('/').slice(-2).join('/').split('.')[0];
-  await cloudinary.uploader.destroy(publicId);
-
-  // حدّث الـ images array بالـ DB
-  const updatedImages = existingImages.filter(img => img !== imageUrl);
-  await repo.update(id, { images: updatedImages });
-
-  return await repo.findOne({ where: { id } });
-};
-
 export const getAllListings = async (filters = {}) => {
   const repo = listingRepo();
   const query = repo.createQueryBuilder('listing');
@@ -110,6 +87,14 @@ export const getAllListings = async (filters = {}) => {
     query.andWhere('listing.qty <= :qty_max', { qty_max: parseFloat(filters.qty_max) });
   }
 
+  if (filters.listingType) {
+    query.andWhere('listing.listingType = :listingType', { listingType: filters.listingType });
+  }
+
+  if (filters.grade) {
+    query.andWhere('listing.grade = :grade', { grade: filters.grade });
+  }
+
   if (filters.search) {
     query.andWhere(
       'listing.search_vector @@ plainto_tsquery(:search)',
@@ -117,5 +102,72 @@ export const getAllListings = async (filters = {}) => {
     );
   }
 
-  return await query.getMany();
+  // ─── Sort ───────────────────────────────────────
+  const sortMap = {
+    newest: { field: 'listing.createdAt', order: 'DESC' },
+    oldest: { field: 'listing.createdAt', order: 'ASC' },
+    price_asc: { field: 'listing.price', order: 'ASC' },
+    price_desc: { field: 'listing.price', order: 'DESC' },
+  };
+
+  const sort = sortMap[filters.sort] || sortMap.newest;
+  query.orderBy(sort.field, sort.order);
+
+  // ─── Pagination ─────────────────────────────────
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 12;
+  const skip = (page - 1) * limit;
+
+  query.skip(skip).take(limit);
+
+  const [listings, total] = await query.getManyAndCount();
+
+  return {
+    listings,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+};
+
+// ─── Save Listing ────────────────────────────────
+export const saveListing = async (userId, listingId) => {
+  const listing = await listingRepo().findOne({ where: { id: listingId } });
+  if (!listing) throw new Error('Listing not found');
+
+  const existing = await savedRepo().findOne({ where: { userId, listingId } });
+  if (existing) throw new Error('Listing already saved');
+
+  const saved = savedRepo().create({ userId, listingId });
+  return await savedRepo().save(saved);
+};
+
+export const unsaveListing = async (userId, listingId) => {
+  const saved = await savedRepo().findOne({ where: { userId, listingId } });
+  if (!saved) throw new Error('Listing not saved');
+  return await savedRepo().remove(saved);
+};
+
+export const getSavedListings = async (userId) => {
+  return await savedRepo().find({
+    where: { userId },
+    relations: ['listing'],
+    order: { createdAt: 'DESC' },
+  });
+};
+
+// ─── Similar Products ────────────────────────────
+export const getSimilarListings = async (id) => {
+  const listing = await listingRepo().findOne({ where: { id } });
+  if (!listing) throw new Error('Listing not found');
+
+  return await listingRepo()
+    .createQueryBuilder('listing')
+    .where('listing.category = :category', { category: listing.category })
+    .andWhere('listing.id != :id', { id })
+    .andWhere('listing.status = :status', { status: 'Available' })
+    .orderBy('listing.createdAt', 'DESC')
+    .take(4)
+    .getMany();
 };

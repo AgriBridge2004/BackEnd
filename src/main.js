@@ -19,7 +19,8 @@ import messageRouter from './messages/message.router.js';
 import notificationRouter from './notifications/notification.router.js';
 import reviewRouter from './reviews/review.router.js';
 import disputeRouter from './disputes/dispute.router.js';
-import qoRouter from './QO/QO.router.js'; // ✅ إضافة
+import qoRouter from './QO/QO.router.js';
+import adminRouter from './admin/admin.router.js'; // 
 
 dotenv.config();
 
@@ -95,13 +96,14 @@ app.use('/deals/:id/messages', messageRouter);
 app.use('/notifications', notificationRouter);
 app.use('/reviews', reviewRouter);
 app.use('/disputes', disputeRouter);
-app.use('/qo', qoRouter); // ← ناقص // ✅ إضافة Route النزاعات
+app.use('/qo', qoRouter);
+app.use('/admin', adminRouter); // ✅ إضافة
 
 // ============================================================
 // HEALTH CHECK
 // ============================================================
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'AgriBridge API is running 🚀',
     version: '1.0.0',
     endpoints: {
@@ -116,7 +118,8 @@ app.get('/', (req, res) => {
       notifications: '/notifications',
       reviews: '/reviews',
       disputes: '/disputes',
-       qo: '/qo', // ← ضيف هاد
+      qo: '/qo',
+      admin: '/admin', // ✅ إضافة
       docs: '/api-docs',
     }
   });
@@ -127,7 +130,7 @@ app.get('/', (req, res) => {
 // ============================================================
 app.use((err, req, res, next) => {
   console.error('❌ Global error handler:', err);
-  res.status(500).json({ 
+  res.status(500).json({
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });

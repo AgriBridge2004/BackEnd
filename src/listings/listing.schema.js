@@ -4,7 +4,7 @@ export const createListingSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   productType: Joi.string().valid('Plant', 'Animal').required(),
   category: Joi.string().valid(
-    'Fruits', 'Vegetables', 'Nuts', 'Herbs', 
+    'Fruits', 'Vegetables', 'Nuts', 'Herbs',
     'Grains', 'Meat', 'Dairy', 'Eggs', 'Honey'
   ).required(),
   description: Joi.string().min(10).max(1000).required(),
@@ -13,6 +13,16 @@ export const createListingSchema = Joi.object({
   price: Joi.number().positive().required(),
   location: Joi.string().min(2).max(100).required(),
   expiry: Joi.date().optional(),
+  // ─── Extra Fields ───────────────────────────────
+  harvestDate: Joi.date().optional(),
+  grade: Joi.string().valid('A', 'B', 'C').optional(),
+  variety: Joi.string().max(100).optional(),
+  farmingMethod: Joi.string().valid('Organic', 'Conventional', 'Hydroponic', 'Other').optional(),
+  packaging: Joi.string().max(200).optional(),
+  shelfLife: Joi.string().max(100).optional(),
+  storage: Joi.string().max(200).optional(),
+  certifications: Joi.array().items(Joi.string()).optional(),
+  listingType: Joi.string().valid('Spot', 'Pre-Harvest').optional(),
 });
 
 export const updateListingSchema = Joi.object({
@@ -28,4 +38,14 @@ export const updateListingSchema = Joi.object({
   price: Joi.number().positive().optional(),
   location: Joi.string().min(2).max(100).optional(),
   expiry: Joi.date().optional(),
+  // ─── Extra Fields ───────────────────────────────
+  harvestDate: Joi.date().optional(),
+  grade: Joi.string().valid('A', 'B', 'C').optional(),
+  variety: Joi.string().max(100).optional(),
+  farmingMethod: Joi.string().valid('Organic', 'Conventional', 'Hydroponic', 'Other').optional(),
+  packaging: Joi.string().max(200).optional(),
+  shelfLife: Joi.string().max(100).optional(),
+  storage: Joi.string().max(200).optional(),
+  certifications: Joi.array().items(Joi.string()).optional(),
+  listingType: Joi.string().valid('Spot', 'Pre-Harvest').optional(),
 });
